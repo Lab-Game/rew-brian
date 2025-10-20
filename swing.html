@@ -1,0 +1,266 @@
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF8">
+</head>
+<body>
+<a href="index.html">rew-brian.com</a>
+<h1>Woods Swing</h1>
+<canvas id="myCanvas" width=1500 height=800 style="border:1px solid black"></canvas>
+
+<script>
+function animate() {
+  webkitRequestAnimationFrame(animate);
+
+  var current_time = new Date().getTime() / 1000.0;
+
+  // Simulate movement of the swing up to the current time.
+  while (sim_time < current_time) {
+    var dt = Math.min(timestep, current_time - sim_time);
+    
+    k1 = dt * (- gravity / chain_length * Math.sin(phi));
+    k2 = dt * (- gravity / chain_length * Math.sin(phi + k1 / 2));
+    k3 = dt * (- gravity / chain_length * Math.sin(phi + k2 / 2));
+    k4 = dt * (- gravity / chain_length * Math.sin(phi + k3));
+    omega += (k1 + 2 * k2 + 2 * k3 + k4) / 6.0;
+    phi += dt * omega
+    sim_time += dt;
+  }
+
+  // Clear the screen.
+  context.clearRect(-200, -200, 600, 400);
+
+  // When drawing the swing, the origin is at the attachment point,
+  // and the coordinate system rotates with the swing.  When the
+  // swing is at rest, phi is 0.  Positive phi is to the right.
+  context.save();
+
+  context.translate(0, 85);
+  context.rotate(phi);
+
+  // Draw the ropes.
+  context.strokeStyle = "sienna";
+  context.lineWidth = 1;
+
+  context.beginPath();
+  context.moveTo(0, 0);
+  context.lineTo(18, - chain_length);
+  context.stroke();
+
+  context.beginPath();
+  context.moveTo(0, 0);
+  context.lineTo(-18, - chain_length);
+  context.stroke();
+
+  // Draw the swing.
+  context.fillStyle = "red";
+  context.beginPath();
+  context.arc(0, 0, Math.sqrt(chain_length * chain_length + 22 * 22),
+              1.4 * Math.PI, 1.6 * Math.PI);
+  context.fill();
+
+  // Draw the elevation indicator.
+  context.strokeStyle = "blue";
+  context.lineWidth = 0.25;
+  context.beginPath();
+  context.moveTo(20, - chain_length);
+  var endx = thrower_offset + 12 * Math.cos(elevation);
+  var endy = - chain_length + 12 * Math.sin(elevation);
+  context.lineTo(endx, endy);
+  context.lineTo(endx - 4 * Math.cos(elevation + 0.4),
+                 endy - 4 * Math.sin(elevation + 0.4));
+  context.moveTo(endx, endy);
+  context.lineTo(endx - 4 * Math.cos(elevation - 0.4),
+                 endy - 4 * Math.sin(elevation - 0.4));
+  context.stroke();
+
+  context.restore();
+
+  // Draw the ground.
+  // 50 feet in both directions and 10 feet down.
+  context.fillStyle = "peru";
+  context.beginPath();
+  context.rect(-600, 0, 1200, -120);
+  context.fill();
+
+  // Draw the swing support.
+  // 120 inches high, 2 inches thick
+  context.fillStyle = "goldenrod";
+  context.beginPath();
+  context.rect(-1, 0, 2, 120);
+  context.fill();
+
+  // Draw the wall.
+  context.fillStyle = "sienna";
+  context.beginPath();
+  context.rect(wall_start, 0, wall_width, wall_height);
+  context.fill();
+
+  // Draw the push arrows.
+  if (current_time < arrow_time + 0.25) {
+    context.font = "bold 24px sans-serif";
+    context.textAlign = "center";
+    context.fillStyle = arrow_color;
+    context.fillText(arrow_symbol, 0, 16);
+  }
+
+  // Simulate the ball.
+  if (ball_in_flight) {
+    var t = current_time - ball_throw_time;
+    var x = ball_x0 + ball_xt * t;
+    var y = ball_y0 + ball_yt * t + ball_ytt * t * t;
+    if (current_time > ball_stop_time) {
+      ball_in_flight = false;
+      world_record = Math.max(world_record, ball_distance);
+    } else {
+      context.fillStyle = "blue";
+      context.beginPath();
+      context.arc(x, y, 1, 0, 2 * Math.PI);
+      context.fill();
+    }
+  }
+
+  // Draw the world record flag.
+  context.strokeStyle = "purple";
+  context.lineWidth = 0.5;
+  context.beginPath();
+  context.moveTo(world_record, 0);
+  context.lineTo(world_record, 6);
+  context.rect(world_record, 6, 5, 3);
+  context.stroke();
+}
+
+function handleKeyDown(event) {
+  var current_time = new Date().getTime() / 1000.0;
+  if (event.keyCode == 39) {  // right arrow = push right
+    arrow_time = current_time;
+    if (omega < 4.0) {
+      arrow_symbol = "\u2192";
+      if (omega >= 0) {
+        arrow_color = "green";
+      } else {
+        arrow_color = "red";
+      }
+      omega = Math.min(omega + 0.1, 4.0);
+    } else {
+      arrow_symbol = "-";
+      arrow_color = "purple";
+    }
+  } else if (event.keyCode == 37) {  // left arrow = push left
+    arrow_time = current_time;
+    if (omega > -4.0) {
+      arrow_symbol = "\u2190";
+      if (omega <= 0) {
+        arrow_color = "green";
+      } else {
+        arrow_color = "red";
+      }
+      omega = Math.max(omega - 0.1, -4.0);
+    } else {
+      arrow_symbol = "-";
+      arrow_color = "purple";
+    }
+  } else if (event.keyCode == 38) {  // up arrow = elevation up
+    elevation = Math.min(elevation + 0.05, Math.PI);
+  } else if (event.keyCode == 40) {  // down arrow = elevation down
+    elevation = Math.max(elevation - 0.05, 0);
+  } else if (event.keyCode == 32) {  // space = throw ball
+    if (!ball_in_flight) {
+      ball_in_flight = true;
+      ball_throw_time = new Date().getTime() / 1000.0;
+      ball_x0 = thrower_radius * Math.sin(phi + thrower_angle);
+      ball_xt = throw_velocity * Math.cos(phi + elevation) +
+                thrower_radius * omega * Math.cos(phi + thrower_angle);
+      ball_y0 = 85 - thrower_radius * Math.cos(phi + thrower_angle);
+      ball_yt = throw_velocity * Math.sin(phi + elevation) +
+                thrower_radius * omega * Math.sin(phi + thrower_angle);
+      ball_ytt = -385  / 2.0;  // 1/2 gravitational acceleration
+
+      var flight_time =
+        (- ball_yt - Math.sqrt(ball_yt * ball_yt - 4 * ball_ytt * ball_y0)) /
+        (2 * ball_ytt);
+      var flight_distance = ball_x0 + ball_xt * flight_time;
+
+      if (flight_distance < wall_start) {
+        // The ball did not reach the wall... simple enough!
+        ball_stop_time = current_time + flight_time;
+        ball_distance = flight_distance;
+      } else {
+        // When does the ball reach the wall?
+        var ttw = (wall_start - ball_x0) / ball_xt;  // time-to-wall
+        // How high is the ball at that point?
+        var height_at_wall = ball_y0 + ball_yt * ttw + ball_ytt * ttw * ttw;
+
+        if (height_at_wall < wall_height) {
+          // The ball is below the top of the wall.
+          ball_stop_time = current_time + ttw;
+          ball_distance = wall_start;
+        } else {
+          // The ball went over the wall.
+          ball_stop_time = current_time + flight_time;
+          ball_distance = flight_distance;
+        }
+      }
+    }
+  }
+}
+
+var canvas = document.getElementById("myCanvas");
+window.addEventListener('keydown', handleKeyDown, true);
+
+var context = canvas.getContext("2d");
+
+// The origin is the base of the swing pole.
+// Flip the y-axis so that positive is up.
+// Change units to inches.
+context.translate(300, 790);
+context.scale(5, -5);
+
+// Wall characteristics
+var wall_start = 169.0;
+var wall_height = 43.0;
+var wall_width = 3.0;
+
+// Simulation variables are updated through this time.
+var sim_time = new Date().getTime() / 1000.0;
+
+// Set the initial position and velocity.
+var phi = 0.0;
+var omega = 0.0;
+
+// Set simulation constants
+var timestep = 0.01; // sec
+var gravity = 386.0; // in / sec^2
+var chain_length = 66.0; // in
+var thrower_offset = 20.0; // in
+var thrower_radius = Math.sqrt(thrower_offset * thrower_offset +
+                               chain_length * chain_length);
+var thrower_angle = Math.atan(thrower_offset / chain_length);
+var throw_velocity = 150.0; // in / sec
+var elevation = Math.PI / 4; // relative to swing's surface
+
+// Set arrow-related variables
+var arrow_time = 0.0;
+var arrow_symbol = "X";
+var arrow_color = "purple";
+
+// Set ball characteristics.
+// The ball's position is:
+// (ball_x0 + t * ball_xt, ball_y0 + t * ball_yt + t^2 * ball_ytt)
+var ball_in_flight = false;
+var ball_throw_time = 0.0;
+var ball_stop_time = 0.0;
+var ball_distance = 0.0;
+var ball_x0 = 0.0;
+var ball_xt = 0.0;
+var ball_y0 = 0.0;
+var ball_yt = 0.0;
+var ball_ytt = 0.0;
+
+// world record distance flag
+var world_record = -1000.0;
+
+animate();
+</script>
+
+</body>
+</html>

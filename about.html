@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - Lehman Family</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            text-align: center;
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        nav {
+            background: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        nav ul {
+            list-style: none;
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+        }
+        
+        nav a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        nav a:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        nav a.active {
+            background: #764ba2;
+            color: white;
+        }
+        
+        main {
+            padding: 3rem 0;
+        }
+        
+        .content {
+            background: white;
+            padding: 3rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .content h2 {
+            color: #667eea;
+            margin-bottom: 1.5rem;
+            font-size: 2rem;
+        }
+        
+        .content h3 {
+            color: #764ba2;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+        
+        .content p {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 1rem;
+            line-height: 1.8;
+        }
+        
+        .family-info {
+            background: #f8f9fa;
+            padding: 2rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+        }
+        
+        .family-info ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .family-info li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 1.1rem;
+        }
+        
+        .family-info li:last-child {
+            border-bottom: none;
+        }
+        
+        .family-info strong {
+            color: #667eea;
+            margin-right: 0.5rem;
+        }
+        
+        footer {
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 2rem 0;
+            margin-top: 3rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>The Lehman Family</h1>
+            <p class="subtitle">Welcome to our family website</p>
+        </div>
+    </header>
+    
+    <nav>
+        <div class="container">
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="about.html" class="active">About Us</a></li>
+                <li><a href="photos.html">Family Photos</a></li>
+            </ul>
+        </div>
+    </nav>
+    
+    <main>
+        <div class="container">
+            <div class="content">
+                <h2>About Our Family</h2>
+                <p>Welcome to our family page! We're the Lehman family, and this is our story.</p>
+                
+                <h3>Our Story</h3>
+                <p>This section can be filled with your family's unique story - how you came together, 
+                   your journey, and the experiences that have shaped your family.</p>
+                
+                <div class="family-info">
+                    <h3>Family Details</h3>
+                    <ul>
+                        <li><strong>Family Name:</strong> Lehman</li>
+                        <li><strong>Location:</strong> To be added</li>
+                        <li><strong>Family Members:</strong> To be added</li>
+                        <li><strong>Interests:</strong> To be added</li>
+                    </ul>
+                </div>
+                
+                <h3>What We Love</h3>
+                <p>This is a great place to share your family's interests, hobbies, and passions. 
+                   Whether it's traveling, cooking, sports, music, or spending time outdoors, 
+                   let others know what brings your family together.</p>
+                
+                <h3>Future Plans</h3>
+                <p>Share your family's dreams and aspirations here. This could include travel plans, 
+                   goals, or any exciting projects you're working on together.</p>
+            </div>
+        </div>
+    </main>
+    
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 The Lehman Family. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>

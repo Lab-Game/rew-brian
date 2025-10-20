@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+    <body onload="init();">
+        <a href="index.html">rew-brian.com</a>
+        <h1>Lab Game</h1>
+        <canvas id="canvas" width="800" height="600"></canvas>
+        <p>
+            Use the arrow keys to move the cursor.<br>
+            Press 'c' to place concrete, Backspace to erase to air, and Space to do nothing.<br>
+            Water (blue) will fall from the top center, and magma (red) will fall from the top left.<br>
+            Watch how water and magma interact to create steam (gray)!<br>
+        </p>
+        <script>
+
+const Chemical = {
+    none : { color: "lime", weight: 0 },
+    air : { color: "black", weight: 0 },
+    water : { color: "blue", weight: 1 },
+    concrete : { color: "white", weight: 0 },
+    magma : { color: "red", weight: 1 },
+    steam : { color: "gray", weight: -1 },
+};
+
+const cursorSize = 10;
+const cursorColor = "fuchsia";
+
+var ctx;
+var width, height;
+var cursorX, cursorY;
+var cursorChemical;
+var grid;
+var cells;
+
+function keypress(event) {
+    // Erase the cursor
+    ctx.fillStyle = grid[cursorY][cursorX].chemical.color;
+    ctx.fillRect(cursorX * cursorSize, cursorY * cursorSize, cursorSize, cursorSize);
+
+    // Handle the keypress
+    if (event.key == "ArrowUp") {
+        cursorY = Math.max(0, cursorY - 1);
+    } else if (event.key == "ArrowDown") {
+        cursorY = Math.min(height - 1, cursorY + 1);
+    } else if (event.key == "ArrowLeft") {
+        cursorX = Math.max(0, cursorX - 1);
+    } else if (event.key == "ArrowRight") {
+        cursorX = Math.min(width - 1, cursorX + 1);
+    } else if (event.key == "c") {
+        cursorChemical = Chemical.concrete;
+    } else if (event.key == "Backspace") {
+        event.preventDefault();  // delete key != back button
+        cursorChemical = Chemical.air;
+    } else if (event.key === " ") {
+        cursorChemical = Chemical.none;
+    }
+
+    // Place the chosen chemical under the cursor
+    if (cursorChemical != Chemical.none) {
+        grid[cursorY][cursorX].chemical = cursorChemical;
+    }
+
+    // Redraw the cursor
+    ctx.fillStyle = cursorColor;
+    ctx.fillRect(cursorX * cursorSize, cursorY * cursorSize, cursorSize, cursorSize);
+}
+
+function mix(cell, neighbor) {
+    // If there is no neighbor, the chemical just disappears off the edge
+    if (neighbor == null) {
+        cell.chemical = Chemical.air;
+        return true;
+    }
+
+    if (cell.chemical == Chemical.water) {
+        if (neighbor.chemical == Chemical.air || neighbor.chemical == Chemical.steam) {
+            // Water trades places with air and steam
+            [ cell.chemical, neighbor.chemical ] = [ neighbor.chemical, cell.chemical ];
+            return true;
+        } else if (neighbor.chemical == Chemical.magma) {
+            // Water turns to steam when it contacts magma
+            cell.chemical = Chemical.steam;
+            return true;
+        } else {
+            return false;
+        }
+    } else if (cell.chemical == Chemical.magma) {
+        if (neighbor.chemical == Chemical.air || neighbor.chemical == Chemical.steam) {
+            // Magma trades places with air and steam
+            [ cell.chemical, neighbor.chemical ] = [ neighbor.chemical, cell.chemical ];
+            return true;
+        } else if (neighbor.chemical == Chemical.water) {
+            // Magma turns water to steam
+            neighbor.chemical = Chemical.steam;
+            return true;
+        } else {
+            return false;
+        }
+    } else if (cell.chemical == Chemical.steam) {
+        // Steam trades places with air, water, and magma
+        if (neighbor.chemical == Chemical.air || neighbor.chemical == Chemical.water || neighbor.chemical == Chemical.magma) {
+            [ cell.chemical, neighbor.chemical ] = [ neighbor.chemical, cell.chemical ];
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    }
+}
+
+
+function update() {
+    // Always add water at the top of the screenw
+    grid[0][Math.floor(width / 2)].chemical = Chemical.water;
+
+    // Sometimes add magma off-center at the top of the screen
+    if (Math.random() < 0.1) {
+        grid[0][Math.floor(width / 4)].chemical = Chemical.magma;
+    }
+
+    // Permute the cells in the "cells" list.
+    for (let i = cells.length - 1; i > 0; --i) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [cells[i], cells[j]] = [cells[j], cells[i]];
+    }
+
+    // Simulate chemicals
+    for (let cell of cells) {
+
+        if (cell.chemical == Chemical.steam && Math.random() < 0.01) {
+            cell.chemical = Chemical.water;
+            continue;
+        }
+
+        if (cell.chemical.weight == 1) {
+            // Heavy chemicals fall down
+            if (mix(cell, cell.down)) {
+                continue;
+            }
+        }
+        
+        if (cell.chemical.weight == -1) {
+            // Light chemicals rise up
+            if (mix(cell, cell.up)) {
+                continue;
+            }
+        }
+        
+        if (cell.chemical.weight != 0) {
+            // If up or down fails, try left or right
+            if (Math.random() < 0.5) {
+                mix(cell, cell.left);
+            } else {
+                mix(cell, cell.right);
+            }
+        }
+    }
+
+    // Redraw the entire grid
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            let cell = grid[y][x];
+            ctx.fillStyle = cell.chemical.color;
+            ctx.fillRect(x * cursorSize, y * cursorSize, cursorSize, cursorSize);
+        }
+    }
+
+    // Add the cursor
+    ctx.fillStyle = cursorColor;
+    ctx.fillRect(cursorX * cursorSize, cursorY * cursorSize, cursorSize, cursorSize);
+}
+
+function init() {
+    ctx = document.getElementById('canvas').getContext('2d');
+    width = canvas.width / cursorSize;
+    height = canvas.height / cursorSize;
+    cursorX = Math.floor(width / 2);
+    cursorY = Math.floor(height / 2);
+    cursorChemical = Chemical.none;
+    grid = [];
+    cells = [];
+    for (let y = 0; y < height; y++) {
+        grid[y] = [];
+        for (let x = 0; x < width; x++) {
+            let cell = { x: x, y: y, chemical: Chemical.air };
+            grid[y][x] = cell;
+            cells.push(cell);
+        }
+    }
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            let cell = grid[y][x];
+            cell.up = (y > 0) ? grid[y - 1][x] : null;
+            cell.down = (y < height - 1) ? grid[y + 1][x] : null;
+            cell.left = (x > 0) ? grid[y][x - 1] : null;
+            cell.right = (x < width - 1) ? grid[y][x + 1] : null;
+        }
+    }
+
+    window.addEventListener('keydown', keypress);
+    setInterval(update, 100);
+}
+
+        </script>
+    </body>
+</html>

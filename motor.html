@@ -1,0 +1,104 @@
+<html>
+    <body onload="init();">
+        <a href="index.html">rew-brian.com</a>
+        <h1>DC Motor Simulation</h1>
+        <canvas id="canvas" width="800" height="600"></canvas>
+        <script>
+
+const radiansPerSecond = 0.1;
+var rotorAngle = 0;
+
+let lastTimestamp = null;
+
+function animate(timestamp) {
+    requestAnimationFrame(animate);
+
+    // Determine time since the last animation frame and
+    // update the rotor angle accordingly.
+    if (lastTimestamp !== null) {
+        const delta = (timestamp - lastTimestamp) / 1000;
+        rotorAngle += radiansPerSecond * delta;
+        if (rotorAngle > 2 * Math.PI) {
+            rotorAngle -= 2 * Math.PI;
+        }
+    }
+    lastTimestamp = timestamp;
+
+    var ctx = document.getElementById("canvas").getContext("2d");
+
+    // Clear the canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw the rotor as a circle with one half blue and one half red.
+    ctx.save();
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate(rotorAngle);
+    ctx.beginPath();
+    ctx.arc(0, 0, 100, 0, Math.PI);
+    ctx.closePath();
+    ctx.fillStyle = "red";
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(0, 0, 100, Math.PI, 2 * Math.PI);
+    ctx.closePath();
+    ctx.fillStyle = "blue";
+    ctx.fill();
+    ctx.restore();
+
+    ctx.beginPath();
+    ctx.moveTo(canvas.width / 2, canvas.height / 2);
+    ctx.lineTo(canvas.width / 2 + 120 * Math.cos(rotorAngle - Math.PI / 2),
+               canvas.height / 2 + 120 * Math.sin(rotorAngle - Math.PI / 2));
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 5;
+    ctx.stroke();
+
+    // Draw the three stator coils as rectangles offset by 120 degrees.
+    for (let i = 0; i < 3; i++) {
+        const angle = i * (2 * Math.PI / 3);
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate(angle);
+
+        // We'll color the stator coil to indicate its polarity based on the rotor angle.
+        // To do this, we'll construct a vector pointing from the center of the rotor
+        // through the blue face of the rotor, and see how that relates to the
+        // vector pointing to the coil.
+        const rotorVectorX = Math.cos(rotorAngle - Math.PI / 2);
+        const rotorVectorY = Math.sin(rotorAngle - Math.PI / 2);
+
+        const coilVectorX = Math.cos(angle);
+        const coilVectorY = Math.sin(angle);
+
+        // In particular, we'll dot the rotor vector (after rotating by 90 degrees) by
+        // the coil vector.  If the dot product is quite positive (> 0.5), the coil is energized
+        // with one polarity.  If quite negative (< -0.5), the opposite polarity.
+        // Otherwise, the coil is not energized.
+        const dot = -rotorVectorY * coilVectorX + rotorVectorX * coilVectorY;
+        if (dot > 0.5) {
+            ctx.fillStyle = "red";
+        } else if (dot < -0.5) {
+            ctx.fillStyle = "blue";
+        } else {
+            ctx.fillStyle = "#b87333";  // copper color
+        }
+        ctx.fillRect(120, -50, 100, 100);
+        ctx.restore();
+    }
+}
+
+function init() {
+    ctx = document.getElementById("canvas").getContext("2d");
+
+    // The motor is parameterized by the state of the three coils
+    // and the orientation of the rotor.  In this animation, we'll
+    // slowly spin the rotor and derive the coil states from the
+    // rotor angle.
+
+    // Begin the animation loop
+    requestAnimationFrame(animate);
+}
+
+        </script>
+    </body>
+</html>

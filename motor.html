@@ -3,88 +3,107 @@
         <a href="index.html">rew-brian.com</a>
         <h1>DC Motor Simulation</h1>
         <canvas id="canvas" width="800" height="600"></canvas>
+        <p>This is a simulation of a simple DC motor control algorithm.<br>
+        The rotor (the inner circle) has a north pole (blue) and a south pole (red).<br>
+        The stators (the three outer lines) can be energized to create north or south poles.<br>
+        The control algorithm energizes the stators based on the rotor's position to create continuous rotation.<br>
+        There are more efficient algorithms, but this one is simple to understand.<br>
+        </p>
         <script>
 
-const radiansPerSecond = 0.1;
+// The north pole (blue side) of the rotor faces this direction
 var rotorAngle = 0;
 
 let lastTimestamp = null;
-
 function animate(timestamp) {
     requestAnimationFrame(animate);
 
     // Determine time since the last animation frame and
     // update the rotor angle accordingly.
+    const rotorRadiansPerSecond = 0.2;
     if (lastTimestamp !== null) {
         const delta = (timestamp - lastTimestamp) / 1000;
-        rotorAngle += radiansPerSecond * delta;
-        if (rotorAngle > 2 * Math.PI) {
-            rotorAngle -= 2 * Math.PI;
-        }
+        rotorAngle += rotorRadiansPerSecond * delta;
     }
     lastTimestamp = timestamp;
+
+    // Compute a unit vector representing the rotor's north pole.
+    // Here, we're working in standard "math" coordinates with
+    // +x to the right, +y up, 0 radians along +x, and increasing angles
+    // counterclockwise.
+    let rotorVectorX = Math.cos(rotorAngle);
+    let rotorVectorY = Math.sin(rotorAngle);
+
+    // The stators are at angles 0, 2π/3, and 4π/3.
+    let statorAngles = [0, 2 * Math.PI / 3, 4 * Math.PI / 3];
+
+    // Dot the rotor vector (rotated by 90 degrees) with each stator angle
+    let statorDots = statorAngles.map(angle => {
+        let statorVectorX = Math.cos(angle);
+        let statorVectorY = Math.sin(angle);
+        return -rotorVectorY * statorVectorX + rotorVectorX * statorVectorY;
+    });
+
+    let statorColors = statorDots.map(dot => {
+        if (dot > 0.5) {
+            return "red";  // north
+        } else if (dot < -0.5) {
+            return "blue";  // south
+        } else {
+            return "gray";  // unpowered
+        }
+    });
 
     var ctx = document.getElementById("canvas").getContext("2d");
 
     // Clear the canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw the rotor as a circle with one half blue and one half red.
+    // Switch the canvas to use math-like coordinates
     ctx.save();
-    ctx.translate(canvas.width / 2, canvas.height / 2);
-    ctx.rotate(rotorAngle);
+    ctx.setTransform(1, 0, 0, -1, canvas.width / 2, canvas.height/2);
+
+    const rotorRadius = 100;
+    const magnetWidth = 50;
+
+    // Draw the rotor
     ctx.beginPath();
-    ctx.arc(0, 0, 100, 0, Math.PI);
-    ctx.closePath();
-    ctx.fillStyle = "red";
+    ctx.arc(0, 0, rotorRadius, 0, 2 * Math.PI);
+    ctx.fillStyle = "gray";
     ctx.fill();
+
+    // Draw the rotor's north pole
+    ctx.save();
+    ctx.lineWidth = magnetWidth;
     ctx.beginPath();
-    ctx.arc(0, 0, 100, Math.PI, 2 * Math.PI);
-    ctx.closePath();
-    ctx.fillStyle = "blue";
-    ctx.fill();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(rotorRadius * rotorVectorX, rotorRadius * rotorVectorY);
+    ctx.strokeStyle = "blue";
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-rotorRadius * rotorVectorX, -rotorRadius * rotorVectorY);
+    ctx.strokeStyle = "red";
+    ctx.stroke();
     ctx.restore();
 
-    ctx.beginPath();
-    ctx.moveTo(canvas.width / 2, canvas.height / 2);
-    ctx.lineTo(canvas.width / 2 + 120 * Math.cos(rotorAngle - Math.PI / 2),
-               canvas.height / 2 + 120 * Math.sin(rotorAngle - Math.PI / 2));
-    ctx.strokeStyle = "black";
-    ctx.lineWidth = 5;
-    ctx.stroke();
+    const statorInnerRadius = 120;
+    const statorOuterRadius = 300;
+    const statorWidth = 100;
 
-    // Draw the three stator coils as rectangles offset by 120 degrees.
+    // Draw the stators
+    ctx.save();
+    ctx.lineWidth = statorWidth;
     for (let i = 0; i < 3; i++) {
-        const angle = i * (2 * Math.PI / 3);
-        ctx.save();
-        ctx.translate(canvas.width / 2, canvas.height / 2);
-        ctx.rotate(angle);
-
-        // We'll color the stator coil to indicate its polarity based on the rotor angle.
-        // To do this, we'll construct a vector pointing from the center of the rotor
-        // through the blue face of the rotor, and see how that relates to the
-        // vector pointing to the coil.
-        const rotorVectorX = Math.cos(rotorAngle - Math.PI / 2);
-        const rotorVectorY = Math.sin(rotorAngle - Math.PI / 2);
-
-        const coilVectorX = Math.cos(angle);
-        const coilVectorY = Math.sin(angle);
-
-        // In particular, we'll dot the rotor vector (after rotating by 90 degrees) by
-        // the coil vector.  If the dot product is quite positive (> 0.5), the coil is energized
-        // with one polarity.  If quite negative (< -0.5), the opposite polarity.
-        // Otherwise, the coil is not energized.
-        const dot = -rotorVectorY * coilVectorX + rotorVectorX * coilVectorY;
-        if (dot > 0.5) {
-            ctx.fillStyle = "red";
-        } else if (dot < -0.5) {
-            ctx.fillStyle = "blue";
-        } else {
-            ctx.fillStyle = "#b87333";  // copper color
-        }
-        ctx.fillRect(120, -50, 100, 100);
-        ctx.restore();
+        let angle = statorAngles[i];
+        ctx.beginPath();
+        ctx.moveTo(statorInnerRadius * Math.cos(angle), statorInnerRadius * Math.sin(angle));
+        ctx.lineTo(statorOuterRadius * Math.cos(angle), statorOuterRadius * Math.sin(angle));
+        ctx.strokeStyle = statorColors[i];
+        ctx.stroke();
     }
+    ctx.restore();
+    ctx.restore();
 }
 
 function init() {

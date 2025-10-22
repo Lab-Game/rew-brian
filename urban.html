@@ -1,0 +1,72 @@
+<html>
+    <head>
+        <title>Urban Growth Simulation</title>
+    </head>
+    <body>
+        <a href="index.html">rew-brian.com</a>
+        <h1>Urban Growth Simulation</h1>
+        <canvas id="canvas" width="800" height="600" style="border:1px solid black"></canvas>
+        <p>
+            This is a placeholder for the Urban Growth Simulation project.
+        </p>
+        <script>
+
+// Notes
+/*
+
+There is a grid of cells, which can contain structures.  Initially, every structure fits on one grid square.
+Squares can also be empty grass, forest, or water.
+Structures can be homes, shops, factories, parks, roads, etc.
+Roads in adjacent grid squares connect up.
+The simulation imagines people moving from homes to places where they can:
+- work (factories, shops)
+- shop (shops)
+- relax (parks, theaters)
+
+People prefer to live near roads, and they prefer to live near other people.
+Factories and shops prefer to be near roads and near people.
+
+Roads develop on natural travel routes, if they're not actively developed.
+
+Initially, people travel on foot, but better roads enables cars and busses.
+Tracks allow train transport.
+*/
+
+const cellSize = 20;  // pixels
+
+var ctx;  // canvas context
+
+const Structure = {
+    road: { name: "road" },
+    home: { name: "home" },
+    shop: { name: "shop" },
+    factory: { name: "factory" },
+    park: { name: "park" },
+};
+
+class Cell {
+    constructor(x, y) {
+        this.x = x;  // grid coordinates
+        this.y = y;
+        this.structure = null;  // structure in this cell
+    }
+}
+
+function init() {
+    ctx = document.getElementById("canvas").getContext("2d");
+
+    // Create a 2-D array of Cell objects
+    var gridWidth = Math.floor(ctx.canvas.width / cellSize);
+    var gridHeight = Math.floor(ctx.canvas.height / cellSize);
+    var grid = new Array(gridHeight);
+    for (var y = 0; y < gridHeight; y++) {
+        grid[y] = new Array(gridWidth);
+        for (var x = 0; x < gridWidth; x++) {
+            grid[y][x] = new Cell(x, y);
+        }
+    }
+}
+
+        </script>
+    </body>
+</html>

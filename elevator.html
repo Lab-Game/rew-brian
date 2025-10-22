@@ -1,0 +1,73 @@
+<html>
+    <body onload="init()">
+        <a href="index.html">rew-brian.com</a>
+        <h1>Elevator Control Simulation</h1>
+        <canvas id="canvas" width="800" height="600"></canvas>
+        <p>This simulates an FRC elevator.</p>
+        <script>
+
+// We'll simulate the elevator as follows.  Let E(t) be
+// the elevator height at time t.  The elevator acceleration
+// is then:
+//
+// E''(t) = - G - sign(E'(t)) * F_friction + M(t)
+//
+// where G is a constant representing gravity, F_friction is
+// a constant representing friction, and M(t) is the motor
+// force at time t.
+//
+// The motor is driven by an elevator governed by a voltage
+// balance equation:
+//
+// V_supply = V_backemf + I(t) * R + L * I'(t)
+//
+// (Somehow, I need to sneak in a friction term proportional to
+// the motor torque here, since that torque is proportional to
+// the force between gear teeth, which creates friction losses.)
+//
+// where V_supply is the voltage supplied to the motor (which
+// we control), V_backemf is the back-EMF voltage, I(t) is the motor current,
+// R is the motor resistance, L is the motor inductance, and I'(t) is the derivative
+// of the motor current with respect to time.
+//// The back-EMF voltage is proportional to the motor angular velocity,
+// which is proportional to the elevator velocity E'(t).
+// The motor force M(t) is proportional to the motor current I(t).
+// We'll use Runge-Kutta to integrate these equations over time.
+//
+// What remains is the gear ratio between the motor and the elevator,
+// the drum radius, and the constants G, F_friction, and the motor
+// constants (proportionality constants for back-EMF and motor force). 
+
+function drawElevator(ctx, height) {
+    // Clear the canvas
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+    // Draw the robot base
+    ctx.fillStyle = "blue";
+    ctx.beginPath();
+    ctx.roundRect(100, 550, 300, 50, 10);
+    ctx.fill();
+
+    // Draw the lower elevator stage
+    ctx.strokeStyle = "gray";
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.rect(150, 300, 200, 245);
+    ctx.stroke();
+
+    // Draw the upper elevator stage
+    ctx.beginPath();
+    ctx.rect(160, 290 - height, 180, 250);
+    ctx.stroke();
+}
+
+function init() {
+    var ctx = document.getElementById("canvas").getContext("2d");
+
+    // Valid heights are 0 to 200.
+    drawElevator(ctx, 200);
+}
+
+        </script>
+    </body>
+</html>

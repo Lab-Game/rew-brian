@@ -9,16 +9,14 @@
 // Basic parameters for Kraken X60 motor
 const nominalVoltage = 12.0;
 const freeSpeedRPM = 6000;
-const freeSpeedRadPerSec = freeSpeedRPM / 60 * 2 * Math.PI;
 const freeCurrent = 2;
 const stallTorque = 7.09;
 const stallCurrent = 366;
 
-//    this.rOhms = nominalVoltageVolts / this.stallCurrentAmps;
-//    this.KvRadPerSecPerVolt =
-//        freeSpeedRadPerSec / (nominalVoltageVolts - rOhms * this.freeCurrentAmps);
+// Convert free speed to radians per second
+const freeSpeedRadPerSec = freeSpeedRPM / 60 * 2 * Math.PI;
 
-// From these basic parameters, we can derive some other
+// From the basic motor parameters, we can derive some other
 // useful constants:
 //
 //   Kt = torque per amp
@@ -32,7 +30,7 @@ const stallCurrent = 366;
 const kT = stallTorque / stallCurrent;
 
 // And when the motor is stalled, there is no back-EMF.
-// So current, voltage, and resistances are related by Ohm's Law:
+// So current, voltage, and resistance are related by Ohm's Law:
 const R = nominalVoltage / stallCurrent;
 
 // At all times, the voltage supplied to the motor is
@@ -46,15 +44,25 @@ const R = nominalVoltage / stallCurrent;
 //
 //   Ke = (nominalVoltage - I * R) / motor speed
 //
-// We can determine Ke from the motor's basic parameters at
-// free speed, where we know the motor speed and current:
+// We can determine Ke when the motor is running at
+// free speed, since we know both the motor speed and current:
 const Ke = (nominalVoltage - freeCurrent * R) / freeSpeedRadPerSec;
 
-// People often use Kv, the inverse of Ke, instead:
+// People often use kV, the inverse of Ke:
 const kV = 1 / Ke;
 
-// Now suppose we want to know how much torque the motor is
-// generating.  The 
+// Now suppose we want to know how much torque the motor
+// provides at a given speed and voltage:
+//
+//   torque = Kt * I
+//          = Kt * (voltage - back-EMF) / R
+//          = Kt * (voltage - Ke * motor speed) / R
+function getMotorTorque(motorSpeedRadPerSec, voltage) {
+    let backEmf = motorSpeedRadPerSec * Ke;
+    let current = (voltage - backEmf) / R;
+    let torque = kT * current;
+    return torque;
+}
 
 const inchesToPixels = 8;  // 1 inch = 10 pixels
 

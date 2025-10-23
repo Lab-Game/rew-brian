@@ -6,41 +6,77 @@
         <p>This simulates an FRC elevator.</p>
         <script>
 
-// We'll simulate the elevator as follows.  Let E(t) be
-// the elevator height at time t.  The elevator acceleration
-// is then:
-//
-// E''(t) = - G - sign(E'(t)) * F_friction + M(t)
-//
-// where G is a constant representing gravity, F_friction is
-// a constant representing friction, and M(t) is the motor
-// force at time t.
-//
-// The motor is driven by an elevator governed by a voltage
-// balance equation:
-//
-// V_supply = V_backemf + I(t) * R + L * I'(t)
-//
-// (Somehow, I need to sneak in a friction term proportional to
-// the motor torque here, since that torque is proportional to
-// the force between gear teeth, which creates friction losses.)
-//
-// where V_supply is the voltage supplied to the motor (which
-// we control), V_backemf is the back-EMF voltage, I(t) is the motor current,
-// R is the motor resistance, L is the motor inductance, and I'(t) is the derivative
-// of the motor current with respect to time.
-//// The back-EMF voltage is proportional to the motor angular velocity,
-// which is proportional to the elevator velocity E'(t).
-// The motor force M(t) is proportional to the motor current I(t).
-// We'll use Runge-Kutta to integrate these equations over time.
-//
-// What remains is the gear ratio between the motor and the elevator,
-// the drum radius, and the constants G, F_friction, and the motor
-// constants (proportionality constants for back-EMF and motor force). 
+// Basic parameters for Kraken X60 motor
+const nominalVoltage = 12.0;
+const freeSpeedRPM = 6000;
+const freeSpeedRadPerSec = freeSpeedRPM / 60 * 2 * Math.PI;
+const freeCurrent = 2;
+const stallTorque = 7.09;
+const stallCurrent = 366;
 
-function drawElevator(ctx, height) {
+//    this.rOhms = nominalVoltageVolts / this.stallCurrentAmps;
+//    this.KvRadPerSecPerVolt =
+//        freeSpeedRadPerSec / (nominalVoltageVolts - rOhms * this.freeCurrentAmps);
+
+// From these basic parameters, we can derive some other
+// useful constants:
+//
+//   Kt = torque per amp
+//   Ke = back EMF constant: volts per (rad/sec)
+//   Kv = 1 / Ke = rad/sec per volt
+//   R = motor resistance
+//
+// In particular, torque is proportional to current, so we can
+// derive Kt from any state where both the torque and current
+// are known (e.g., stall):
+const kT = stallTorque / stallCurrent;
+
+// And when the motor is stalled, there is no back-EMF.
+// So current, voltage, and resistances are related by Ohm's Law:
+const R = nominalVoltage / stallCurrent;
+
+// At all times, the voltage supplied to the motor is
+// divided between the back EMF and voltage drop across
+// the motor coils:
+//
+//   nominalVoltage = back EMF + voltage drop across coils
+//                  = Ke * motor speed + I * R
+//
+// Rearranging, we have:
+//
+//   Ke = (nominalVoltage - I * R) / motor speed
+//
+// We can determine Ke from the motor's basic parameters at
+// free speed, where we know the motor speed and current:
+const Ke = (nominalVoltage - freeCurrent * R) / freeSpeedRadPerSec;
+
+// People often use Kv, the inverse of Ke, instead:
+const kV = 1 / Ke;
+
+// Now suppose we want to know how much torque the motor is
+// generating.  The 
+
+const inchesToPixels = 8;  // 1 inch = 10 pixels
+
+function drawElevator(ctx, heightInches) {
+    heightInches = Math.max(0, Math.min(20, heightInches));
+    const heightPixels = heightInches * inchesToPixels;
+
     // Clear the canvas
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+    // Draw the lower elevator stage
+    ctx.strokeStyle = "gray";
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.rect(150, 300, 200, 255);
+    ctx.stroke();
+
+    // Draw the upper elevator stage
+    ctx.strokeStyle = "lightgray";
+    ctx.beginPath();
+    ctx.rect(160, 290 - heightPixels, 180, 250);
+    ctx.stroke();
 
     // Draw the robot base
     ctx.fillStyle = "blue";
@@ -48,24 +84,36 @@ function drawElevator(ctx, height) {
     ctx.roundRect(100, 550, 300, 50, 10);
     ctx.fill();
 
-    // Draw the lower elevator stage
-    ctx.strokeStyle = "gray";
-    ctx.lineWidth = 10;
-    ctx.beginPath();
-    ctx.rect(150, 300, 200, 245);
-    ctx.stroke();
+    // Put the team number, 6962, on the robot base
+    ctx.textAlign = "center";
+    ctx.fillStyle = "white";
+    ctx.font = "30px Arial";
+    ctx.fillText("6962", 250, 585);
 
-    // Draw the upper elevator stage
-    ctx.beginPath();
-    ctx.rect(160, 290 - height, 180, 250);
-    ctx.stroke();
+    // Print the elevator height.
+    ctx.fillStyle = "black";
+    ctx.font = "20px Arial";
+    ctx.fillText("height = " + heightInches + " in", 250, 280 - heightPixels);
+}
+
+function simulate() {
+    // Simulate motor behavior over time.  This is a rough draft.
+    let motorSpeed = 0.0;
+    let kV = 0.012;  // volts per (rad/sec)
+    let Vsupply = 12.0;  // volts
+    for (let t = 0; t < 1; t += 0.0001) {
+        let backEmf = motorSpeed * kV;
+        let voltageApplied = Vsupply - backEmf;
+        let motorAcceleration = voltageApplied * 0.1;  // rad/sec^2 per volt
+        motorSpeed += motorAcceleration * 0.0001;
+    }
 }
 
 function init() {
     var ctx = document.getElementById("canvas").getContext("2d");
 
     // Valid heights are 0 to 200.
-    drawElevator(ctx, 200);
+    drawElevator(ctx, 10);
 }
 
         </script>

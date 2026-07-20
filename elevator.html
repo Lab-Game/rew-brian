@@ -49,7 +49,7 @@ const R = nominalVoltage / stallCurrent;
 const Ke = (nominalVoltage - freeCurrent * R) / freeSpeedRadPerSec;
 
 // People often use kV, the inverse of Ke:
-const kV = 1 / Ke;
+const kV = 1 / Ke;  // rad/sec per volt
 
 // Now suppose we want to know how much torque the motor
 // provides at a given speed and voltage:
